@@ -42,3 +42,33 @@ as.data.frame(t(data))
 colSums(tdata[1:5,1:6])
 rigid_scores <- colSums(tdata[1:5,])
 hist(rigid_scores)
+summary(rigid_scores)
+boxplot(rigid_scores)
+#
+fluid_scores <- colSums(tdata[6:10, ])
+#
+percent_rigid <- rigid_scores/(rigid_scores + fluid_scores)
+percent_fluid <- fluid_scores/(rigid_scores + fluid_scores)
+hist(percent_fluid) ### these look good
+hist(percent_rigid) ### these look good
+summary(percent_rigid)
+#I just realized that a lot of entries are blank (no info for the persons)
+nz <- tdata[ ,colSums(tdata)!=0]
+# Now redo stats for nz (cut of matrix for only non zero-sum people)
+rigid_scores <- colSums(nz[1:5,])
+hist(rigid_scores)
+summary(rigid_scores)
+boxplot(rigid_scores) #that looks a lot better
+fluid_scores <- colSums(nz[6:10, ])
+#
+percent_rigid <- rigid_scores/(rigid_scores + fluid_scores)
+percent_fluid <- fluid_scores/(rigid_scores + fluid_scores)
+hist(percent_fluid) ### these look good
+hist(percent_rigid) ### these look good
+summary(percent_rigid)
+boxplot(fluid_scores)
+plot(rigid_scores, type="o")
+# Now to color code
+plot(percent_rigid, col=ifelse(percent_rigid < 0.5, 'red', 'green'), pch=18)
+# yes, that looks like a little "clustering"...
+# ...now, for the individual components of rigid and fluid (energetic signals)
