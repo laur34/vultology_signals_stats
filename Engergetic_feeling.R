@@ -17,47 +17,43 @@ hist(data$R5_Subordinate_Fluidity)
 # Now Fluid
 hist(data$F1_Fluid_Posture)
 hist(data$F2_Eye_Centric)
-hist(data$PR1_Head_Pushes) ##wait, this is wrong
-hist(data$PF1_Restless_Momentum)
+hist(data$F3_Gliding_Motions)
+hist(data$F4_Horizontal_Movements)
 # There are really a lot of 0's in all of the above, more than any other score actually .
 
-# Question:  How to get sample's "Rigid score" and "Fluid score", which would be sum of R1-5, and sum of F1-5, respectively.
-## Use first person as example:
+# Objective:  Get a person's "Rigid score" and "Fluid score", which would be sum of R1-5, and sum of F1-5, respectively.
+## Use first person (Coer de Pirate) as example:
 rigid_score_Coer <- sum(data[1,1:5])
 fluid_score_Coer <- sum(data[1,6:10])
 rigid_fluid_scores <- c(rigid_score_Coer, fluid_score_Coer)
 df <- data.frame(name=c("rigid_score","fluid_score"), value=rigid_fluid_scores)
 barplot(height=df$value, names=df$name, main="Coer de Pirate")
 
-# So this is one persons rigid vs fluid energetic scores.
-# How to visualize ....average difference in the two scores...like, variablity?
-# First, maybe make like a percent, like PctRigid. For example, Coer would be negative (or below 1, because they are fluid, i.e. more fluid than Rigid)
+# Visualize trends in tendencies for continuous trait distribution (i.e. bimodality)
+# That is, show that persons tend to be either predominant in Rigid signals or in Fluid signals.
+# First, make a percent, like PctRigid. For example, Coer would be negative (or below 1, because they are fluid, i.e. more fluid than Rigid)
 # like, pctRigid =  12/(12+18) and then pctFluid = 18/(12+18)
 rigid_score_Coer/(rigid_score_Coer+fluid_score_Coer)
 fluid_score_Coer/(rigid_score_Coer+fluid_score_Coer)
-# Try transposing the data frame
+# Transpose the data frame so that signals will be in columns, persons in rows
 tdata <- t.data.frame(data)
-as.data.frame(t(data))
-#library(data.table)
-#t_data <- transpose(data)
-#rownames(t_data) <- colnames(data)
-#colnames(t_data) <- rownames(data)
+
 colSums(tdata[1:5,1:6])
 rigid_scores <- colSums(tdata[1:5,])
 hist(rigid_scores)
 summary(rigid_scores)
 boxplot(rigid_scores)
-#
 fluid_scores <- colSums(tdata[6:10, ])
-#
 percent_rigid <- rigid_scores/(rigid_scores + fluid_scores)
 percent_fluid <- fluid_scores/(rigid_scores + fluid_scores)
-hist(percent_fluid) ### these look good
-hist(percent_rigid) ### these look good
+hist(percent_fluid) ### Clear bimodality here
+hist(percent_rigid) ### Clear bimoadality here
 summary(percent_rigid)
-#I just realized that a lot of entries are blank (no info for the persons)
+## The Summary stats and Boxplots clearly show that many entries are blank (no data for many persons in the database)
+## Let nz be a cut of the dataframe for only non zero-sum people:
 nz <- tdata[ ,colSums(tdata)!=0]
-# Now redo stats for nz (cut of matrix for only non zero-sum people)
+
+# Now redo stats for nz
 rigid_scores <- colSums(nz[1:5,])
 hist(rigid_scores)
 summary(rigid_scores)
@@ -66,23 +62,26 @@ fluid_scores <- colSums(nz[6:10, ])
 #
 percent_rigid <- rigid_scores/(rigid_scores + fluid_scores)
 percent_fluid <- fluid_scores/(rigid_scores + fluid_scores)
-hist(percent_fluid) ### these look good
-hist(percent_rigid) ### these look good
+hist(percent_fluid) ### still look good
+hist(percent_rigid) ### still look good
 summary(percent_rigid)
 boxplot(fluid_scores)
+# Now, to see "clusters", begin by plotting the rigid scores for people in a simple x-y
 plot(rigid_scores, type="o")
-# Now to color code
+# Color code to see better
 plot(percent_rigid, col=ifelse(percent_rigid < 0.5, 'red', 'green'), pch=18)
-# yes, that looks like a little "clustering"...
-# ...now, for the individual components of rigid and fluid (energetic signals)
+
+# Now that we've seen that signals considered "rigid" and "fluid" do tend to co-occur in individual persons,
+# Let's examine these energetic signals individually.
 row.names(nz)
-hist(nz[1, ])
-title("R1 Rigid Posture Copy")
-hist(nz[2, ])
-title(main="R2 Face centric")
-nz[1:5,1:4]
-nz[6:10,1:4]
-#Actually, how about create stacked or paired bar plots for each person for their rigid and fluid scores
+hist(nz[1, ], main = "Rigid Posture Copy", xlab="signal score")
+hist(nz[2, ], main="R2 Face centric", xlab="signal score")
+hist(nz[3, ], main="R3 Punctuated Motions", xlab="signal score")
+# As we can see in these histograms, people are scored at either 0, 2, 4, or 7 for these signals (none, lo, med, hi?).
+# Now, let's see the co-occurrence patterns of people's scores in each of the signals. 
+
+# Paired bar plots for each person for their rigid and fluid scores might be insightful.
+# First for a small sample:
 expl <- nz[1:10,1:4]
 colnames(expl) <- gsub(' ', '.', colnames(expl))
 
@@ -91,8 +90,6 @@ df <- data.frame(person=colnames(expl), energetic=c("Rigid","Fluid"),
 
 df2 <- transform(data.frame(expl), Name=row.names(expl))
 
-
-
 long_df2 <- reshape(df2, varying=colnames(expl), times=colnames(expl),
                     timevar = "x", v.names="value", direction="long" )
 
@@ -100,7 +97,8 @@ library(ggplot2)
 #break down by rigid or fluid categorization of signals
 long_df2$category <- rep(c(rep("R", 5), rep("F", 5)), 4)
 p <- ggplot(long_df2, aes(fill = category, y=value, x=x)) + geom_bar(position="dodge", stat="identity")
-##### Try whole dataset
+p
+# Try whole dataset (not done yet) #############
 row.names(data) <- gsub(" ", "_", row.names(data))
 data[,-1]
 #Add categorical variable for if signals or rigid or fluid
@@ -109,6 +107,7 @@ data$FluidScore <- rowSums(data[,6:10])
 #Reshape to long form
 reshape(data, direction="long", varying = list(names(data)[31:32]) )
 ###########
+# Principal Component Analysis, to explore co-occurrence of signals
 nz.pca <- prcomp(nz)
 library(ggfortify)
 nz.pca.plot <- autoplot(nz.pca, data=nz)
@@ -121,4 +120,5 @@ nzvar <- cbind.data.frame(nz, variety)
 pca_res <- prcomp(nz, scale=TRUE)
 p <- autoplot(pca_res, data=nzvar, color='variety', label=TRUE, shape=TRUE)
 p
-##yes:))
+# Looks good. 
+# TODO: Next do, one with only Rigid and Fluid, and also one with only PR, RR, PF, and RF.
